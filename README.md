@@ -1,6 +1,10 @@
 # blender-intrinsic-lora
 Use Stable Diffusion intrinsic lora to render texture maps (normal, albedo, shade, depth)
 
+Blender implementation of 
+
+https://intrinsic-lora.github.io/
+
 1. You need stable diffusion 1.5 in safetensors format. This for example: https://huggingface.co/runwayml/stable-diffusion-v1-5/
 
 2. You need the loras. Download from here: https://huggingface.co/neph1/intrinsic_lora and place in intrinsic_lora_addon/pretrained_weights

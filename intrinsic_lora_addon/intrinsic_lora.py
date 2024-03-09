@@ -24,7 +24,7 @@ class IntrinsicLoRAImageGenerator:
 
     def load_model(self):
 
-        self.pipeline = StableDiffusionPipeline.from_single_file(self.pretrained_model_name_or_path)
+        self.pipeline = StableDiffusionPipeline.from_single_file(self.pretrained_model_name_or_path, local_files_only=True,load_safety_checker=False)
         self.pipeline.to(self.device)
         self.unet = self.pipeline.unet
         self.text_encoder = self.pipeline.text_encoder

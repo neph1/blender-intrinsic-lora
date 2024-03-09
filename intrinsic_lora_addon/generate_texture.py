@@ -3,7 +3,7 @@ import logging
 from intrinsic_lora_addon.camera_utils import project_uvs, render_viewport
 from intrinsic_lora_addon.intrinsic_lora import IntrinsicLoRAImageGenerator
 
-from intrinsic_lora_addon.image_utils import bake_from_active, create_projector_object, set_projector_position_and_orientation, setup_projector_material, assign_material_to_projector, remove_projector
+from intrinsic_lora_addon.image_utils import bake_from_active, create_projector_object, set_projector_position_and_orientation, setup_projector_material, assign_material_to_projector, remove_projector, transform_normal_map
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -12,7 +12,8 @@ logger.addHandler(logging.StreamHandler())
 def generate(obj) -> str:
     props = bpy.context.scene.intrinsic_lora_properties
     output_folder = bpy.context.scene.render.filepath
-    rendered_image = render_viewport(props.size, props.size, output_folder)
+    size = props.size
+    rendered_image = render_viewport(size, size, output_folder)
     print("Output folder:", output_folder)
     model = bpy.context.preferences.addons['intrinsic_lora_addon'].preferences.model
     print("Model:", model)
@@ -47,13 +48,20 @@ def generate(obj) -> str:
     bpy.ops.object.mode_set(mode = 'OBJECT')
     project_uvs(projector)
     
-    bake_from_active(projector, target_object, depth_map, normal_map, albedo_map, shade_map)
-    
+    bake_from_active(projector, target_object, depth_map, normal_map, albedo_map, shade_map, size)
+
     if props.delete_projector:
         remove_projector(projector)
         
     generator.close()
 
+def convert_normal_map():
+    if len(bpy.context.selected_objects) > 0:
+        obj = bpy.context.selected_objects[0]
+        transform_normal_map(obj)
+    else:
+        return "No object selected. Please select an object."
+ 
 def execute():
     if len(bpy.context.selected_objects) > 0:
         obj = bpy.context.selected_objects[0]

@@ -8,6 +8,9 @@ Blender implementation of
 
 https://intrinsic-lora.github.io/
 
+Like with blender-stable-diffusion-render, this addon bakes the resulting texture back to you UV-mapped model.
+
+Each texture generated will create a new node in the material. You're responsible for linking them.
 
 Example video:
 

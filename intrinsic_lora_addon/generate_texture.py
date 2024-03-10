@@ -14,10 +14,13 @@ def generate(obj) -> str:
     output_folder = bpy.context.scene.render.filepath
     size = props.size
     rendered_image = render_viewport(size, size, output_folder)
-    print("Output folder:", output_folder)
+
     model = bpy.context.preferences.addons['intrinsic_lora_addon'].preferences.model
-    print("Model:", model)
-    generator = IntrinsicLoRAImageGenerator(pretrained_model_name_or_path=model)
+    config = bpy.context.preferences.addons['intrinsic_lora_addon'].preferences.config
+
+    
+    generator = IntrinsicLoRAImageGenerator(pretrained_model_name_or_path=model, config=config)
+
     depth_map = None
     normal_map = None
     albedo_map = None
@@ -54,6 +57,8 @@ def generate(obj) -> str:
         remove_projector(projector)
         
     generator.close()
+    del generator
+    generator = None
 
 def convert_normal_map():
     if len(bpy.context.selected_objects) > 0:

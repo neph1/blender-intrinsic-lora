@@ -20,9 +20,9 @@ def setup_projector_material(depth_map = None, normal_map = None, albedo_map = N
     if depth_map:
         depth_map_node = projector_material.node_tree.nodes.new('ShaderNodeTexImage')
         depth_map_node.image = depth_map
-        displacement_map = projector_material.node_tree.nodes.new(type='ShaderNodeDisplacement')
-        projector_material.node_tree.links.new(depth_map_node.outputs[0], displacement_map.inputs['Height'])
-        projector_material.node_tree.links.new(displacement_map.outputs[0], output_node.inputs['Displacement'])
+        #displacement_map = projector_material.node_tree.nodes.new(type='ShaderNodeDisplacement')
+        #projector_material.node_tree.links.new(depth_map_node.outputs[0], displacement_map.inputs['Height'])
+        projector_material.node_tree.links.new(depth_map_node.outputs[0], bdsf_node.inputs['Base Color'])
     if normal_map:
         normal_map_node = projector_material.node_tree.nodes.new('ShaderNodeTexImage')
         normal_map_node.image = normal_map
@@ -36,7 +36,7 @@ def setup_projector_material(depth_map = None, normal_map = None, albedo_map = N
     if shading_map:
         shading_map_node = projector_material.node_tree.nodes.new('ShaderNodeTexImage')
         shading_map_node.image = shading_map
-        projector_material.node_tree.links.new(shading_map_node.outputs[0], bdsf_node.inputs[3])
+        projector_material.node_tree.links.new(shading_map_node.outputs[0], bdsf_node.inputs['Base Color'])
     
     projector_material.node_tree.links.new(bdsf_node.outputs[0], output_node.inputs[0])
     return projector_material
@@ -104,66 +104,64 @@ def transform_normal_map(obj):
     # Ensure the object has a UV map
     if not obj.data.uv_layers:
         return "Object has no UV map."
-
+    material = obj.data.materials[obj.active_material_index]
     # Select the normal map texture
-    normal_map_node = None
-    for mat_slot in obj.material_slots:
-        if mat_slot.material:
-            for node in mat_slot.material.node_tree.nodes:
-                if node.type == 'NORMAL_MAP':
-                    normal_map_node = node
-                    break
-
+    normal_map_node = material.node_tree.nodes.active
+    
     if not normal_map_node:
         return "No normal map found in material nodes."
 
-    # Get the tangent and bitangent from UV map
-    mesh = obj.data
-    bm = bpy.data.meshes.new(obj.name + "_temp")
-    bm.from_mesh(mesh)
-    bm.calc_tangents()
-
-    for face in bm.faces:
-        for loop_index, loop in enumerate(face.loops):
-            tangent = loop.tangent
-            bitangent = loop.bitangent
-            break
-
-    bm.free()
-
-    # Get the normal map image
-    normal_map_texture = None
-    for slot in obj.material_slots:
-        if slot.material:
-            for texture_slot in slot.material.texture_slots:
-                if texture_slot and texture_slot.texture.type == 'IMAGE':
-                    normal_map_texture = texture_slot.texture.image
-                    break
-
+        # Get the normal map image
+    normal_map_texture = normal_map_node.image
+    
     if not normal_map_texture:
         return "No normal map image found."
+    # Get the tangent and bitangent from UV map
+    mesh = obj.data
+    #bm = bpy.data.meshes.new(obj.name + "_temp")
+    #bm.from_mesh(mesh)
+    #bm.calc_tangents()
 
-    # Create a new image for the model space normal map
-    model_space_normal_map = bpy.data.images.new(obj.name + "_model_space_normal_map", width=normal_map_texture.size[0], height=normal_map_texture.size[1])
+    difference_values = []
 
-    # Transform each pixel in the normal map
-    world_normals = np.array(normal_map_texture.pixels[:]).reshape(normal_map_texture.size[1], normal_map_texture.size[0], 4)
+    # Loop through each polygon and access its vertices and normals
+    for polygon in mesh.polygons:
+        # Access vertex indices and corresponding normals from the polygon
+        vertex_indices = polygon.loop_indices-1
+        vertex_normals = [mesh.vertices[index].normal for index in vertex_indices]
 
-    for y in range(normal_map_texture.size[1]):
-        for x in range(normal_map_texture.size[0]):
-            world_normal = world_normals[y, x, :3]
-            model_normal = world_to_model_normal(world_normal, tangent, bitangent)
-            model_space_normal_map.pixels[(y * normal_map_texture.size[0] + x) * 4:(y * normal_map_texture.size[0] + x + 1) * 4] = [*model_normal, 1.0]
+    # Process each vertex normal
+    for vertex_normal in vertex_normals:
+        # Get the corresponding pixel value from the normal map texture
+        # This might require additional logic depending on UV mapping
 
-    # Assign the model space normal map to the material
-    model_space_normal_map.pack()
-    normal_map_texture.user_clear()
-    normal_map_texture.user_of_texture_clear()
-    normal_map_texture.user_of_image_clear()
-    obj.data.materials[0].node_tree.nodes.remove(normal_map_node)
+        # Assuming UV coordinates are available in 'loop_data' for each vertex
+        loop_data = mesh.loops[polygon.loop_indices[0]]
+        uv_coord = loop_data.uv
+
+        # Implement UV to pixel mapping logic here to get the corresponding pixel
+        # This can involve texture coordinates and image dimensions
+        # (Replace this with your UV mapping logic)
+        map_pixel_index = calculate_pixel_index(uv_coord, normal_map_texture.width, normal_map_texture.height)
+        map_normal_pixel = normal_map_texture.pixels[map_pixel_index][:3]
+
+        # Calculate difference between vertex normal and map normal
+        difference = [v - m for v, m in zip(vertex_normal, map_normal)]
+        difference_values.append(difference)
+
+    # Create a new image data block for the difference map
+    difference_map = bpy.data.images.new("difference_normal_map", width=normal_map_texture.width, height=normal_map_texture.height)
+
+    # Fill the pixels with the calculated difference values
+    pixels = difference_map.pixels
+    for i, difference in enumerate(difference_values):
+        # Convert difference values back to (0, 255) range
+        pixel_data = [(d * 127.5) + 127.5 for d in difference]
+        pixels[i][:3] = pixel_data
+        
     model_space_normal_map_node = obj.data.materials[0].node_tree.nodes.new(type='ShaderNodeTexImage')
-    model_space_normal_map_node.image = model_space_normal_map
-    obj.data.materials[0].node_tree.links.new(normal_map_node.outputs[0], model_space_normal_map_node.inputs[0])
+    model_space_normal_map_node.image = difference_map
+
 
     return "Model space normal map created successfully."
 

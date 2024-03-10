@@ -41,9 +41,16 @@ class ModelSelector(bpy.types.AddonPreferences):
         default="",
     )
 
+    config: bpy.props.StringProperty(
+        name="Config",
+        description="Config for the model. Required for offline.",
+        default="",
+    )
+
     def draw(self, context):
         layout = self.layout
         layout.prop(self, "model")
+        layout.prop(self, "config")
 
 class IntrinsicLoRAProperties(PropertyGroup):
 
@@ -114,6 +121,7 @@ class IntrinsicLoRASettings(Panel):
 
         col = self.layout.column(align=True)
         col.operator(RenderButton_operator.bl_idname, text="Render")
+        col.operator(ConvertNormalMapButton_operator.bl_idname, text="Convert Normal Map")
 
 class RenderButton_operator(bpy.types.Operator):
     bl_idname = "intrinsic_lora.render_button"
@@ -125,17 +133,29 @@ class RenderButton_operator(bpy.types.Operator):
             self.report({'ERROR'}, result)
         return {'FINISHED'}
     
+class ConvertNormalMapButton_operator(bpy.types.Operator):
+    bl_idname = "intrinsic_lora.convert_normal_map_button"
+    bl_label = "Convert Normal Map"
+
+    def execute(self, context):
+        result = generate_texture.convert_normal_map()
+        if result:
+            self.report({'ERROR'}, result)
+        return {'FINISHED'}
+    
 def register():
     bpy.utils.register_class(ModelSelector)
     prefs = bpy.context.preferences.addons[__name__].preferences
 
     bpy.utils.register_class(RenderButton_operator)
+    #bpy.utils.register_class(ConvertNormalMapButton_operator)
     bpy.utils.register_class(IntrinsicLoRAProperties)
     bpy.types.Scene.intrinsic_lora_properties = PointerProperty(type=IntrinsicLoRAProperties)
     bpy.utils.register_class(IntrinsicLoRASettings)
 
 def unregister():
     bpy.utils.unregister_class(RenderButton_operator)
+    #bpy.utils.unregister_class(ConvertNormalMapButton_operator)
     bpy.utils.unregister_class(ModelSelector)
 
     bpy.utils.unregister_class(IntrinsicLoRAProperties)

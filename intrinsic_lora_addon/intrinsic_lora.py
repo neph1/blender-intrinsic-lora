@@ -1,4 +1,5 @@
 from collections import defaultdict
+import gc
 import os
 import torch
 import numpy as np
@@ -10,8 +11,9 @@ from diffusers import StableDiffusionPipeline
 from diffusers.loaders import LoraLoaderMixin
 
 class IntrinsicLoRAImageGenerator:
-    def __init__(self, pretrained_model_name_or_path):
+    def __init__(self, pretrained_model_name_or_path, config=None):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
+        self.config = config
         self.unet = None
         self.tokenizer = None
         self.text_encoder = None
@@ -24,7 +26,7 @@ class IntrinsicLoRAImageGenerator:
 
     def load_model(self):
 
-        self.pipeline = StableDiffusionPipeline.from_single_file(self.pretrained_model_name_or_path, local_files_only=True,load_safety_checker=False)
+        self.pipeline = StableDiffusionPipeline.from_single_file(self.pretrained_model_name_or_path, original_config_file=self.config, local_files_only=True if self.config else False, load_safety_checker=False)
         self.pipeline.to(self.device)
         self.unet = self.pipeline.unet
         self.text_encoder = self.pipeline.text_encoder
@@ -116,6 +118,10 @@ class IntrinsicLoRAImageGenerator:
     def close(self):
         self.pipeline.unload_lora_weights()
         self.pipeline.maybe_free_model_hooks()
+        del self.pipeline
+        gc.collect()
+        if self.device == 'cuda':
+            torch.cuda.empty_cache()
         
 def tokenize_prompt(tokenizer, prompt, tokenizer_max_length=None):
     if tokenizer_max_length is not None:

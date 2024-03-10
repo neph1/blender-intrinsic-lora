@@ -20,6 +20,13 @@ https://youtu.be/oTtM4-GYlXk
 
 3. Install the intrinsic_lora_addon in your addons folder
 
-4. Config the path to the sd 1.5 checkpoint in the addon preferences.
+4. Config the path to the sd 1.5 checkpoint in the addon preferences. Config is optional, but required for running offline.
+![Screenshot from 2024-03-10 20-34-13](https://github.com/neph1/blender-intrinsic-lora/assets/7988802/011c7c93-5c3f-431a-a05a-8d8911c47a8d)
 
-5. The panel is in the render tab. Pick one (for now) and render it to the selected texture in the selected material.
+
+6. The panel is in the render tab. Pick one (for now) and render it to the selected texture in the selected material.
+![Screenshot from 2024-03-10 15-58-35](https://github.com/neph1/blender-intrinsic-lora/assets/7988802/4abf582b-72e2-462a-be2b-37fc9bb48604)
+
+I think the model only supports 512x512 textures, but feel free to try larger sizes.
+
+Please generate one texture at a time for now.

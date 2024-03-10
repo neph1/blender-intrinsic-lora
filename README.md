@@ -1,6 +1,9 @@
 # blender-intrinsic-lora
 Use Stable Diffusion intrinsic lora to render texture maps (normal, albedo, shade, depth)
 
+![intrinsic_lora](https://github.com/neph1/blender-intrinsic-lora/assets/7988802/0b63d94a-1e5d-4792-8893-b88e6e2cf496)
+
+
 Blender implementation of 
 
 https://intrinsic-lora.github.io/

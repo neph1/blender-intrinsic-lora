@@ -121,7 +121,7 @@ class IntrinsicLoRASettings(Panel):
 
         col = self.layout.column(align=True)
         col.operator(RenderButton_operator.bl_idname, text="Render")
-        col.operator(ConvertNormalMapButton_operator.bl_idname, text="Convert Normal Map")
+        #col.operator(ConvertNormalMapButton_operator.bl_idname, text="Convert Normal Map")
 
 class RenderButton_operator(bpy.types.Operator):
     bl_idname = "intrinsic_lora.render_button"
